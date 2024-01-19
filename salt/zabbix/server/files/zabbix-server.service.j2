@@ -1,0 +1,21 @@
+[Unit]
+Description=Zabbix Server
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker stop {{ pillar.systemd.server.name }}
+ExecStartPre=-/usr/bin/docker rm {{ pillar.systemd.server.name }}
+ExecStartPre=/usr/bin/docker pull {{ pillar.systemd.server.docker_image }}
+ExecStart=/usr/bin/docker run --name {{ pillar.systemd.server.name }} \
+    -e DB_SERVER_HOST="{{ grains["ipv4"][0] }}" \
+    -e DB_SERVER_PORT=5432 \
+    -e POSTGRES_DB="{{ pillar.zabbix.db.name }}" \
+    -e POSTGRES_USER="{{ pillar.zabbix.db.user }}" \
+    -e POSTGRES_PASSWORD="{{ pillar.zabbix.db.password }}" \
+	--network=host \
+    --restart unless-stopped \
+    -d {{ pillar.systemd.server.docker_image }}
+
+[Install]
+WantedBy=default.target

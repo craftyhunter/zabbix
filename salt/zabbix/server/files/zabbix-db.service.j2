@@ -1,0 +1,21 @@
+[Unit]
+Description=PostgreSQL for Zabbix
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker stop {{ pillar.systemd.db.name }}
+ExecStartPre=-/usr/bin/docker rm {{ pillar.systemd.db.name }}
+ExecStartPre=/usr/bin/docker pull {{ pillar.systemd.db.docker_image }}
+ExecStart=/usr/bin/docker run --name {{ pillar.systemd.db.name }} \
+    -e POSTGRES_DB="{{ pillar.zabbix.db.name }}" \
+    -e POSTGRES_USER="{{ pillar.zabbix.db.user }}" \
+	-e POSTGRES_PASSWORD={{ pillar.zabbix.db.password }} \
+	-e PGDATA=/var/lib/postgresql/data/pgdata \
+	--network=host \
+	--restart unless-stopped \
+	-v {{ pillar.zabbix.db.data_dir }}:/var/lib/postgresql/data \
+	-d {{ pillar.systemd.db.docker_image }}
+
+[Install]
+WantedBy=default.target
